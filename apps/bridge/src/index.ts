@@ -114,7 +114,7 @@ app.post("/api/messages/send", async (request, response, next) => {
   }
 });
 
-app.post("/api/messages/send-numbered-menu", async (request, response, next) => {
+app.post(["/api/messages/send-form", "/api/messages/send-numbered-menu"], async (request, response, next) => {
   try {
     const input = z
       .object({

@@ -96,9 +96,9 @@ Responder SAIR para nao receber novas mensagens.
 
 Use `send_whatsapp_formatted_message` para texto e `send_whatsapp_formatted_media` para legenda formatada em foto, video ou documento.
 
-## Menu numerado
+## Form
 
-Use `send_whatsapp_numbered_menu` para simular botoes sem API paga:
+Use `send_whatsapp_form` para simular botoes sem API paga:
 
 ```json
 {

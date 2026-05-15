@@ -174,11 +174,37 @@ server.registerTool(
 );
 
 server.registerTool(
+  "send_whatsapp_form",
+  {
+    title: "Send WhatsApp form",
+    description:
+      "Send a zero-cost WhatsApp form with numbered options. The next numeric reply is answered once with the selected option response, then the session is closed.",
+    inputSchema: {
+      recipient: z.string().min(6),
+      title: z.string().max(200).optional(),
+      body: z.string().min(1).max(3000),
+      options: z
+        .array(
+          z.object({
+            label: z.string().min(1).max(80),
+            responseText: z.string().min(1).max(4000)
+          })
+        )
+        .min(1)
+        .max(10),
+      footer: z.string().max(1000).optional(),
+      invalidResponseText: z.string().max(1000).optional(),
+      expiresInMinutes: z.number().int().min(1).max(1440).default(60)
+    }
+  },
+  async (input) => textResult(await client.sendNumberedMenu(input))
+);
+
+server.registerTool(
   "send_whatsapp_numbered_menu",
   {
     title: "Send WhatsApp numbered menu",
-    description:
-      "Send a zero-cost text menu with numbered options. The next numeric reply is answered once with the selected option response, then the session is closed.",
+    description: "Alias for send_whatsapp_form kept for compatibility.",
     inputSchema: {
       recipient: z.string().min(6),
       title: z.string().max(200).optional(),

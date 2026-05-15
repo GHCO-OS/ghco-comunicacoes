@@ -166,7 +166,7 @@ export class BridgeClient {
     expiresInMinutes: number;
   }) {
     return this.request(
-      "/api/messages/send-numbered-menu",
+      "/api/messages/send-form",
       z.object({
         ok: z.literal(true),
         result: z.object({
