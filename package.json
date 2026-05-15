@@ -1,0 +1,36 @@
+{
+  "name": "ghco-comunicacoes",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bridge WhatsApp local com servidor MCP para comunicacoes GHCO.",
+  "type": "module",
+  "scripts": {
+    "build": "npm run build:bridge && npm run build:mcp",
+    "build:bridge": "tsc -p apps/bridge/tsconfig.json",
+    "build:mcp": "tsc -p apps/mcp-server/tsconfig.json",
+    "dev:bridge": "tsx apps/bridge/src/index.ts",
+    "dev:mcp": "tsx apps/mcp-server/src/index.ts",
+    "typecheck": "npm run build",
+    "start:bridge": "node apps/bridge/dist/index.js",
+    "start:mcp": "node apps/mcp-server/dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@whiskeysockets/baileys": "^7.0.0-rc11",
+    "better-sqlite3": "^12.10.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "pino": "^10.1.0",
+    "qrcode-terminal": "^0.12.0",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.5",
+    "@types/node": "^24.10.1",
+    "@types/qrcode-terminal": "^0.12.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
+
