@@ -114,6 +114,35 @@ app.post("/api/messages/send", async (request, response, next) => {
   }
 });
 
+app.post("/api/messages/send-numbered-menu", async (request, response, next) => {
+  try {
+    const input = z
+      .object({
+        recipient: z.string().min(6),
+        title: z.string().max(200).optional(),
+        body: z.string().min(1).max(3000),
+        options: z
+          .array(
+            z.object({
+              label: z.string().min(1).max(80),
+              responseText: z.string().min(1).max(4000)
+            })
+          )
+          .min(1)
+          .max(10),
+        footer: z.string().max(1000).optional(),
+        invalidResponseText: z.string().max(1000).optional(),
+        expiresInMinutes: z.number().int().min(1).max(1440).default(60)
+      })
+      .parse(request.body);
+
+    const result = await whatsapp.sendNumberedMenu(input);
+    response.json({ ok: true, result });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post("/api/messages/format", (request, response, next) => {
   try {
     const input = z

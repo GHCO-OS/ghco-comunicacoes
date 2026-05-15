@@ -49,8 +49,23 @@ export type StoredMessage = {
   rawJson: string;
 };
 
+export type NumberedMenuSession = {
+  recipientJid: string;
+  menuId: string;
+  promptText: string;
+  options: Array<{ label: string; responseText: string }>;
+  invalidResponseText: string | null;
+  createdAt: string;
+  expiresAt: string;
+  status: "active" | "closed";
+};
+
 type MessageRow = Omit<StoredMessage, "isFromMe"> & {
   isFromMe: number;
+};
+
+type NumberedMenuSessionRow = Omit<NumberedMenuSession, "options"> & {
+  optionsJson: string;
 };
 
 export class MessageStore {
@@ -89,6 +104,17 @@ export class MessageStore {
 
       CREATE INDEX IF NOT EXISTS idx_messages_text
         ON messages (text);
+
+      CREATE TABLE IF NOT EXISTS numbered_menu_sessions (
+        recipient_jid TEXT PRIMARY KEY,
+        menu_id TEXT NOT NULL,
+        prompt_text TEXT NOT NULL,
+        options_json TEXT NOT NULL,
+        invalid_response_text TEXT,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        status TEXT NOT NULL
+      );
     `);
 
     this.migrate();
@@ -232,6 +258,35 @@ export class MessageStore {
          WHERE chat_jid = ? AND id = ?`
       )
       .run(localPath, sizeBytes, chatJid, messageId);
+  }
+
+  saveNumberedMenuSession(session: NumberedMenuSession): void {
+    this.db
+      .prepare(
+        `INSERT OR REPLACE INTO numbered_menu_sessions
+          (recipient_jid, menu_id, prompt_text, options_json, invalid_response_text, created_at, expires_at, status)
+         VALUES
+          (@recipientJid, @menuId, @promptText, @optionsJson, @invalidResponseText, @createdAt, @expiresAt, @status)`
+      )
+      .run({ ...session, optionsJson: JSON.stringify(session.options) });
+  }
+
+  getActiveNumberedMenuSession(recipientJid: string, nowIso: string): NumberedMenuSession | null {
+    const row = this.db
+      .prepare(
+        `SELECT recipient_jid AS recipientJid, menu_id AS menuId, prompt_text AS promptText,
+                options_json AS optionsJson, invalid_response_text AS invalidResponseText,
+                created_at AS createdAt, expires_at AS expiresAt, status
+         FROM numbered_menu_sessions
+         WHERE recipient_jid = ? AND status = 'active' AND expires_at > ?`
+      )
+      .get(recipientJid, nowIso);
+
+    return row ? normalizeNumberedMenuSession(row as NumberedMenuSessionRow) : null;
+  }
+
+  closeNumberedMenuSession(recipientJid: string): void {
+    this.db.prepare("UPDATE numbered_menu_sessions SET status = 'closed' WHERE recipient_jid = ?").run(recipientJid);
   }
 
   private migrate(): void {
@@ -383,5 +438,13 @@ function normalizeMessage(row: MessageRow): StoredMessage {
   return {
     ...row,
     isFromMe: Boolean(row.isFromMe)
+  };
+}
+
+function normalizeNumberedMenuSession(row: NumberedMenuSessionRow): NumberedMenuSession {
+  return {
+    ...row,
+    status: row.status === "active" ? "active" : "closed",
+    options: JSON.parse(row.optionsJson) as NumberedMenuSession["options"]
   };
 }

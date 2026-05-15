@@ -156,6 +156,35 @@ export class BridgeClient {
     );
   }
 
+  async sendNumberedMenu(input: {
+    recipient: string;
+    title?: string;
+    body: string;
+    options: Array<{ label: string; responseText: string }>;
+    footer?: string;
+    invalidResponseText?: string;
+    expiresInMinutes: number;
+  }) {
+    return this.request(
+      "/api/messages/send-numbered-menu",
+      z.object({
+        ok: z.literal(true),
+        result: z.object({
+          jid: z.string(),
+          messageId: z.string().nullable(),
+          menuText: z.string(),
+          expiresInMinutes: z.number(),
+          options: z.array(z.object({ number: z.number(), label: z.string() }))
+        })
+      }),
+      true,
+      {
+        method: "POST",
+        body: JSON.stringify(input)
+      }
+    );
+  }
+
   async sendMedia(input: {
     recipient: string;
     filePath?: string;

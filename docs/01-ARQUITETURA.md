@@ -33,6 +33,7 @@ WhatsApp
 - `GET /api/messages/search?q=texto&limit=20`
 - `GET /api/media?limit=50`
 - `POST /api/messages/send`
+- `POST /api/messages/send-numbered-menu`
 - `POST /api/messages/format`
 - `POST /api/messages/send-media`
 - `POST /api/media/download`
@@ -50,6 +51,7 @@ WhatsApp
 - `send_whatsapp_message`
 - `format_whatsapp_message`
 - `send_whatsapp_formatted_message`
+- `send_whatsapp_numbered_menu`
 - `send_whatsapp_media`
 - `send_whatsapp_formatted_media`
 - `download_whatsapp_media`
@@ -101,6 +103,12 @@ O endpoint `/api/messages/format` e as tools `format_whatsapp_message`, `send_wh
 - `body` vira `_corpo_`, exibido em italico
 - cada item em `quotes` vira uma linha `> informacao`, usada para precos e informacoes uteis
 - `footer` e enviado sem formatacao extra
+
+## Menus numerados
+
+O endpoint `/api/messages/send-numbered-menu` cria um menu de texto com opcoes `1`, `2`, `3` etc. e salva uma sessao ativa por destinatario em SQLite. Quando o proximo texto recebido daquele chat for um numero valido, o bridge envia a `responseText` da opcao escolhida e fecha a sessao.
+
+Se o numero for invalido, o bridge envia `invalidResponseText` e tambem fecha a sessao. Essa regra evita conversas automaticas longas: para reabrir o fluxo, o emissor precisa enviar um novo menu.
 
 ## ChatGPT Apps e MCP remoto
 

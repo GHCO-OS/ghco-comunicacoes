@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import makeWASocket, {
   DisconnectReason,
   downloadMediaMessage,
@@ -8,6 +9,7 @@ import makeWASocket, {
 } from "@whiskeysockets/baileys";
 import P from "pino";
 import qrcode from "qrcode-terminal";
+import { formatNumberedMenu, parseNumberedMenuReply, type NumberedMenuOption } from "./numberedMenu.js";
 import type { MessageStore } from "./store.js";
 
 type Socket = ReturnType<typeof makeWASocket>;
@@ -81,6 +83,40 @@ export class WhatsAppClient {
     return {
       jid,
       messageId: result?.key?.id ?? null
+    };
+  }
+
+  async sendNumberedMenu(input: {
+    recipient: string;
+    title?: string;
+    body: string;
+    options: NumberedMenuOption[];
+    footer?: string;
+    invalidResponseText?: string;
+    expiresInMinutes?: number;
+  }) {
+    const jid = normalizeRecipient(input.recipient);
+    const promptText = formatNumberedMenu(input);
+    const result = await this.sendText(jid, promptText);
+    const createdAt = new Date();
+    const expiresInMinutes = Math.min(1440, Math.max(1, input.expiresInMinutes ?? 60));
+
+    this.messageStore.saveNumberedMenuSession({
+      recipientJid: jid,
+      menuId: randomUUID(),
+      promptText,
+      options: input.options,
+      invalidResponseText: input.invalidResponseText ?? "Opcao nao reconhecida. Envie uma nova mensagem para reiniciar o atendimento.",
+      createdAt: createdAt.toISOString(),
+      expiresAt: new Date(createdAt.getTime() + expiresInMinutes * 60 * 1000).toISOString(),
+      status: "active"
+    });
+
+    return {
+      ...result,
+      menuText: promptText,
+      expiresInMinutes,
+      options: input.options.map((option, index) => ({ number: index + 1, label: option.label }))
     };
   }
 
@@ -204,6 +240,31 @@ export class WhatsAppClient {
       ...extractMediaMetadata(message.message, id),
       rawJson: JSON.stringify(message)
     });
+
+    if (!message.key?.fromMe) {
+      void this.handleNumberedMenuReply(chatJid, text);
+    }
+  }
+
+  private async handleNumberedMenuReply(chatJid: string, text: string | null): Promise<void> {
+    const choice = parseNumberedMenuReply(text);
+    if (!choice) {
+      return;
+    }
+
+    const session = this.messageStore.getActiveNumberedMenuSession(chatJid, new Date().toISOString());
+    if (!session) {
+      return;
+    }
+
+    const option = session.options[choice - 1];
+    this.messageStore.closeNumberedMenuSession(chatJid);
+
+    try {
+      await this.sendText(chatJid, option?.responseText ?? session.invalidResponseText ?? "Opcao nao reconhecida.");
+    } catch (error) {
+      console.error("Failed to answer numbered menu reply:", error);
+    }
   }
 }
 

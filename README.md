@@ -103,6 +103,7 @@ Exemplo de configuracao MCP:
 - `send_whatsapp_message`
 - `format_whatsapp_message`
 - `send_whatsapp_formatted_message`
+- `send_whatsapp_numbered_menu`
 - `send_whatsapp_media`
 - `send_whatsapp_formatted_media`
 - `download_whatsapp_media`
@@ -120,6 +121,24 @@ _Corpo em italico_
 ```
 
 Use `format_whatsapp_message` para revisar o texto antes de enviar, `send_whatsapp_formatted_message` para enviar texto formatado e `send_whatsapp_formatted_media` para usar a mesma regra na legenda de fotos, videos e documentos.
+
+## Menus numerados
+
+`send_whatsapp_numbered_menu` envia uma mensagem de texto com opcoes numeradas. O proximo numero respondido pelo cliente aciona uma resposta automatica unica e encerra a sessao.
+
+```txt
+*Como posso ajudar?*
+
+Escolha uma opcao:
+
+1. Reservar mesa
+2. Ver cardapio
+3. Falar com atendente
+
+Responda somente com o numero da opcao.
+```
+
+Esse formato substitui botoes nativos mantendo custo zero e usando o WhatsApp Web local.
 
 ## Envio de midia
 

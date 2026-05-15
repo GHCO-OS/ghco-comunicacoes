@@ -96,6 +96,26 @@ Responder SAIR para nao receber novas mensagens.
 
 Use `send_whatsapp_formatted_message` para texto e `send_whatsapp_formatted_media` para legenda formatada em foto, video ou documento.
 
+## Menu numerado
+
+Use `send_whatsapp_numbered_menu` para simular botoes sem API paga:
+
+```json
+{
+  "recipient": "+5519999999999",
+  "title": "Como posso ajudar?",
+  "body": "Escolha uma opcao:",
+  "options": [
+    { "label": "Reservar mesa", "responseText": "Perfeito. Envie data, horario e quantidade de pessoas." },
+    { "label": "Ver cardapio", "responseText": "Cardapio: https://cuiabar.com/menu/" },
+    { "label": "Falar com atendente", "responseText": "Um atendente vai assumir por aqui." }
+  ],
+  "expiresInMinutes": 60
+}
+```
+
+O cliente deve responder apenas com o numero. O bridge responde uma vez e encerra a sessao.
+
 ## Download de midia
 
 1. Use `list_media_messages`.
