@@ -95,6 +95,7 @@ Exemplo de configuracao MCP:
 - `communications_health`
 - `list_chats`
 - `audit_contacts`
+- `Auditar`
 - `search_messages`
 - `get_chat_messages`
 - `get_message`
@@ -118,6 +119,28 @@ Leonardo 0786
 ```
 
 Observacao: a classificacao `likely_saved`/`likely_unsaved` e inferida a partir dos metadados do WhatsApp Web e do historico local. Ela nao le diretamente a agenda do celular.
+
+Use `Auditar` para gerar o CSV de importacao do Google Contacts:
+
+```txt
+store/google-contacts-import.csv
+```
+
+Exemplo de override:
+
+```json
+{
+  "nameOverrides": [
+    { "phone": "+19936180786", "name": "Leonardo" }
+  ]
+}
+```
+
+Resultado no CSV:
+
+```txt
+Leonardo 0786
+```
 
 ## Estado
 

@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import express from "express";
 import { z } from "zod";
 import { requireBearerToken } from "./auth.js";
@@ -41,6 +43,32 @@ app.get("/api/audit/contacts", (request, response) => {
   }
 
   response.json({ ok: true, ...result });
+});
+
+app.post("/api/audit/google-contacts", (request, response, next) => {
+  try {
+    const input = z
+      .object({
+        limit: z.number().int().min(1).max(5000).default(500),
+        includeSaved: z.boolean().default(false),
+        fallbackNamePrefix: z.string().min(1).max(40).default("Contato"),
+        nameOverrides: z
+          .array(
+            z.object({
+              phone: z.string().min(8).max(32),
+              name: z.string().min(1).max(120)
+            })
+          )
+          .default([])
+      })
+      .parse(request.body ?? {});
+
+    const audit = store.auditContacts(input.limit, { includeGroups: false, includeNonPhoneIds: false });
+    const exportResult = exportGoogleContactsCsv(audit.contacts, input);
+    response.json({ ok: true, ...exportResult });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.get("/api/chats/:jid/messages", (request, response) => {
@@ -162,4 +190,69 @@ function toContactAuditCsv(rows: ReturnType<typeof store.auditContacts>["contact
 
 function csvCell(value: string): string {
   return `"${value.replace(/"/g, '""')}"`;
+}
+
+function exportGoogleContactsCsv(
+  contacts: ReturnType<typeof store.auditContacts>["contacts"],
+  options: {
+    includeSaved: boolean;
+    fallbackNamePrefix: string;
+    nameOverrides: Array<{ phone: string; name: string }>;
+  }
+) {
+  const overrides = new Map(options.nameOverrides.map((item) => [normalizePhone(item.phone), item.name.trim()]));
+  const eligible = contacts.filter((contact) => {
+    if (!contact.isPhoneBacked || !contact.phone || !contact.last4) return false;
+    if (contact.savedStatus === "likely_saved" && !options.includeSaved) return false;
+    return true;
+  });
+
+  const rows = eligible.map((contact) => {
+    const normalizedPhone = normalizePhone(contact.phone!);
+    const baseName = overrides.get(normalizedPhone) ?? contact.inferredName ?? `${options.fallbackNamePrefix} ${contact.last4}`;
+    const contactName = `${toTitleCase(baseName).replace(/\s+\d{4}$/, "")} ${contact.last4}`;
+    return {
+      name: contactName,
+      phone: contact.phone!,
+      sourceStatus: contact.savedStatus,
+      sourceJid: contact.jid
+    };
+  });
+
+  const csv = toGoogleContactsCsv(rows);
+  const outputPath = path.join(config.storeDir, "google-contacts-import.csv");
+  fs.mkdirSync(config.storeDir, { recursive: true });
+  fs.writeFileSync(outputPath, csv, "utf8");
+
+  return {
+    outputPath,
+    totalRows: rows.length,
+    rows,
+    csvPreview: csv.split("\n").slice(0, 6).join("\n")
+  };
+}
+
+function toGoogleContactsCsv(rows: Array<{ name: string; phone: string; sourceStatus: string; sourceJid: string }>): string {
+  const header = ["Name", "Given Name", "Notes", "Phone 1 - Type", "Phone 1 - Value"];
+  const body = rows.map((row) => [
+    row.name,
+    row.name,
+    `GHCO Comunicacoes audit; ${row.sourceStatus}; ${row.sourceJid}`,
+    "Mobile",
+    row.phone
+  ]);
+
+  return [header, ...body].map((columns) => columns.map(csvCell).join(",")).join("\n");
+}
+
+function normalizePhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  return digits ? `+${digits}` : phone;
+}
+
+function toTitleCase(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase("pt-BR")
+    .replace(/\p{L}+/gu, (word) => word.charAt(0).toLocaleUpperCase("pt-BR") + word.slice(1));
 }

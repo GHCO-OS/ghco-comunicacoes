@@ -76,6 +76,36 @@ export class BridgeClient {
     );
   }
 
+  async auditarGoogleContacts(input: {
+    limit: number;
+    includeSaved: boolean;
+    fallbackNamePrefix: string;
+    nameOverrides: Array<{ phone: string; name: string }>;
+  }) {
+    return this.request(
+      "/api/audit/google-contacts",
+      z.object({
+        ok: z.literal(true),
+        outputPath: z.string(),
+        totalRows: z.number(),
+        rows: z.array(
+          z.object({
+            name: z.string(),
+            phone: z.string(),
+            sourceStatus: z.string(),
+            sourceJid: z.string()
+          })
+        ),
+        csvPreview: z.string()
+      }),
+      true,
+      {
+        method: "POST",
+        body: JSON.stringify(input)
+      }
+    );
+  }
+
   async searchMessages(query: string, limit: number) {
     const result = await this.request(
       `/api/messages/search?q=${encodeURIComponent(query)}&limit=${encodeURIComponent(String(limit))}`,

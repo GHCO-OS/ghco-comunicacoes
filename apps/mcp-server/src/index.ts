@@ -51,6 +51,29 @@ server.registerTool(
 );
 
 server.registerTool(
+  "Auditar",
+  {
+    title: "Auditar contatos para Google Contacts",
+    description:
+      "Gera um CSV local para importar no Google Contacts, usando nomes no padrao Nome 0786. Use nameOverrides para informar nomes conhecidos, por exemplo phone +19936180786 e name Leonardo.",
+    inputSchema: {
+      limit: z.number().int().min(1).max(5000).default(500),
+      includeSaved: z.boolean().default(false),
+      fallbackNamePrefix: z.string().min(1).max(40).default("Contato"),
+      nameOverrides: z
+        .array(
+          z.object({
+            phone: z.string().min(8).max(32),
+            name: z.string().min(1).max(120)
+          })
+        )
+        .default([])
+    }
+  },
+  async (input) => textResult(await client.auditarGoogleContacts(input))
+);
+
+server.registerTool(
   "search_messages",
   {
     title: "Search WhatsApp messages",

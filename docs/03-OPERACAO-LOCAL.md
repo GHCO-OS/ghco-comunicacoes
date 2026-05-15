@@ -80,6 +80,7 @@ Via MCP:
 
 ```txt
 audit_contacts
+Auditar
 ```
 
 Via API local:
@@ -93,4 +94,24 @@ CSV:
 
 ```powershell
 Invoke-WebRequest "http://127.0.0.1:8788/api/audit/contacts?limit=500&format=csv" -Headers @{Authorization="Bearer $token"} -OutFile store/contact-audit.csv
+```
+
+CSV para Google Contacts:
+
+```powershell
+$body = @{
+  limit = 500
+  includeSaved = $false
+  nameOverrides = @(
+    @{ phone = "+19936180786"; name = "Leonardo" }
+  )
+} | ConvertTo-Json -Depth 5
+
+Invoke-RestMethod "http://127.0.0.1:8788/api/audit/google-contacts" -Method Post -Headers @{Authorization="Bearer $token"} -ContentType "application/json" -Body $body
+```
+
+O arquivo final fica em:
+
+```txt
+store/google-contacts-import.csv
 ```

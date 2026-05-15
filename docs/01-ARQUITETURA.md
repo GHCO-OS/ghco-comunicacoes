@@ -26,6 +26,7 @@ WhatsApp
 
 - `GET /health`
 - `GET /api/audit/contacts?limit=500&includeGroups=false&includeNonPhoneIds=false&format=json`
+- `POST /api/audit/google-contacts`
 - `GET /api/chats?limit=50`
 - `GET /api/chats/:jid/messages?limit=50`
 - `GET /api/chats/:jid/messages/:messageId`
@@ -40,6 +41,7 @@ WhatsApp
 - `communications_health`
 - `list_chats`
 - `audit_contacts`
+- `Auditar`
 - `search_messages`
 - `get_chat_messages`
 - `get_message`
@@ -63,6 +65,16 @@ Campos principais:
 O nome sugerido segue o padrao `Nome 0786`, usando o nome humano disponivel no chat e os quatro ultimos digitos do telefone. Quando nao ha nome humano, a sugestao vira `Contato 0786`.
 
 Limitacao: o WhatsApp Web nao garante leitura direta da agenda do celular; por isso o status e uma inferencia operacional.
+
+`Auditar` gera `store/google-contacts-import.csv` com colunas compativeis com Google Contacts:
+
+- `Name`
+- `Given Name`
+- `Notes`
+- `Phone 1 - Type`
+- `Phone 1 - Value`
+
+Nomes conhecidos podem ser enviados em `nameOverrides` para trocar `Contato 0786` por `Leonardo 0786`.
 
 ## Midia
 
