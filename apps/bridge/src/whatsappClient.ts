@@ -86,7 +86,8 @@ export class WhatsAppClient {
 
   async sendMedia(input: {
     recipient: string;
-    filePath: string;
+    filePath?: string;
+    mediaUrl?: string;
     mediaType: "image" | "video" | "audio" | "document";
     caption?: string;
     fileName?: string;
@@ -97,15 +98,12 @@ export class WhatsAppClient {
       throw new Error("WhatsApp socket is not initialized.");
     }
 
-    const absolutePath = path.resolve(input.filePath);
-    if (!fs.existsSync(absolutePath)) {
-      throw new Error(`Media file does not exist: ${absolutePath}`);
-    }
+    const source = resolveMediaSource(input.filePath, input.mediaUrl);
 
     const jid = normalizeRecipient(input.recipient);
-    const mimeType = input.mimeType ?? inferMimeType(absolutePath);
-    const fileName = input.fileName ?? path.basename(absolutePath);
-    const media = { url: absolutePath };
+    const mimeType = input.mimeType ?? inferMimeType(source.nameForMime);
+    const fileName = input.fileName ?? source.fileName;
+    const media = { url: source.url };
     const content =
       input.mediaType === "image"
         ? { image: media, caption: input.caption, mimetype: mimeType }
@@ -121,7 +119,8 @@ export class WhatsAppClient {
       messageId: result?.key?.id ?? null,
       mediaType: input.mediaType,
       fileName,
-      mimeType
+      mimeType,
+      sourceType: source.sourceType
     };
   }
 
@@ -259,6 +258,43 @@ function extractMediaMetadata(message: any, messageId: string) {
 function normalizeRecipient(recipient: string): string {
   if (recipient.includes("@")) return recipient;
   return `${recipient.replace(/\D/g, "")}@s.whatsapp.net`;
+}
+
+function resolveMediaSource(filePath: string | undefined, mediaUrl: string | undefined) {
+  if (filePath && mediaUrl) {
+    throw new Error("Use only one media source: filePath or mediaUrl.");
+  }
+
+  if (mediaUrl) {
+    const url = new URL(mediaUrl);
+    if (url.protocol !== "https:") {
+      throw new Error("mediaUrl must use HTTPS.");
+    }
+
+    const fileName = path.basename(decodeURIComponent(url.pathname)) || "media";
+    return {
+      url: mediaUrl,
+      fileName,
+      nameForMime: fileName,
+      sourceType: "url"
+    };
+  }
+
+  if (!filePath) {
+    throw new Error("Provide filePath or mediaUrl.");
+  }
+
+  const absolutePath = path.resolve(filePath);
+  if (!fs.existsSync(absolutePath)) {
+    throw new Error(`Media file does not exist: ${absolutePath}`);
+  }
+
+  return {
+    url: absolutePath,
+    fileName: path.basename(absolutePath),
+    nameForMime: absolutePath,
+    sourceType: "file"
+  };
 }
 
 function toIsoTimestamp(value: unknown): string {

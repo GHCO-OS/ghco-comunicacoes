@@ -125,6 +125,42 @@ server.registerTool(
 );
 
 server.registerTool(
+  "format_whatsapp_message",
+  {
+    title: "Format WhatsApp message",
+    description:
+      "Format a WhatsApp text with title in bold, body in italic, and prices or useful information as quoted lines.",
+    inputSchema: {
+      title: z.string().max(200).optional(),
+      body: z.string().max(3000).optional(),
+      quotes: z.array(z.string().min(1).max(500)).max(20).default([]),
+      footer: z.string().max(1000).optional()
+    }
+  },
+  async (input) => textResult(await client.formatMessage(input))
+);
+
+server.registerTool(
+  "send_whatsapp_formatted_message",
+  {
+    title: "Send formatted WhatsApp message",
+    description:
+      "Send a WhatsApp text with title in bold, body in italic, and prices or useful information as quoted lines.",
+    inputSchema: {
+      recipient: z.string().min(6),
+      title: z.string().max(200).optional(),
+      body: z.string().max(3000).optional(),
+      quotes: z.array(z.string().min(1).max(500)).max(20).default([]),
+      footer: z.string().max(1000).optional()
+    }
+  },
+  async ({ recipient, ...formatInput }) => {
+    const formatted = await client.formatMessage(formatInput);
+    return textResult(await client.sendMessage(recipient, formatted.text));
+  }
+);
+
+server.registerTool(
   "send_whatsapp_message",
   {
     title: "Send WhatsApp message",
@@ -141,10 +177,12 @@ server.registerTool(
   "send_whatsapp_media",
   {
     title: "Send WhatsApp media",
-    description: "Send an image, video, audio file, voice note, or document through the local WhatsApp bridge.",
+    description:
+      "Send an image, video, audio file, voice note, or document through the local WhatsApp bridge. Use filePath for local files or mediaUrl for HTTPS media.",
     inputSchema: {
       recipient: z.string().min(6),
-      filePath: z.string().min(1),
+      filePath: z.string().min(1).optional(),
+      mediaUrl: z.string().url().optional(),
       mediaType: z.enum(["image", "video", "audio", "document"]),
       caption: z.string().max(4000).optional(),
       fileName: z.string().min(1).optional(),
@@ -153,6 +191,32 @@ server.registerTool(
     }
   },
   async (input) => textResult(await client.sendMedia(input))
+);
+
+server.registerTool(
+  "send_whatsapp_formatted_media",
+  {
+    title: "Send formatted WhatsApp media",
+    description:
+      "Send image, video, audio, voice note, or document with a formatted caption. Captions use bold title, italic body, and quoted prices/useful info.",
+    inputSchema: {
+      recipient: z.string().min(6),
+      filePath: z.string().min(1).optional(),
+      mediaUrl: z.string().url().optional(),
+      mediaType: z.enum(["image", "video", "audio", "document"]),
+      title: z.string().max(200).optional(),
+      body: z.string().max(3000).optional(),
+      quotes: z.array(z.string().min(1).max(500)).max(20).default([]),
+      footer: z.string().max(1000).optional(),
+      fileName: z.string().min(1).optional(),
+      mimeType: z.string().min(3).optional(),
+      asVoice: z.boolean().optional()
+    }
+  },
+  async ({ title, body, quotes, footer, ...mediaInput }) => {
+    const formatted = await client.formatMessage({ title, body, quotes, footer });
+    return textResult(await client.sendMedia({ ...mediaInput, caption: formatted.text }));
+  }
 );
 
 server.registerTool(

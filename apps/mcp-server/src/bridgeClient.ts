@@ -158,7 +158,8 @@ export class BridgeClient {
 
   async sendMedia(input: {
     recipient: string;
-    filePath: string;
+    filePath?: string;
+    mediaUrl?: string;
     mediaType: "image" | "video" | "audio" | "document";
     caption?: string;
     fileName?: string;
@@ -174,8 +175,24 @@ export class BridgeClient {
           messageId: z.string().nullable(),
           mediaType: z.string(),
           fileName: z.string(),
-          mimeType: z.string()
+          mimeType: z.string(),
+          sourceType: z.string()
         })
+      }),
+      true,
+      {
+        method: "POST",
+        body: JSON.stringify(input)
+      }
+    );
+  }
+
+  async formatMessage(input: { title?: string; body?: string; quotes: string[]; footer?: string }) {
+    return this.request(
+      "/api/messages/format",
+      z.object({
+        ok: z.literal(true),
+        text: z.string()
       }),
       true,
       {

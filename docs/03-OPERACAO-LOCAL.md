@@ -57,15 +57,44 @@ Exemplo pronto:
 
 ## Envio de midia
 
-O MCP aceita caminhos locais para `send_whatsapp_media`.
+O MCP aceita caminhos locais ou URLs HTTPS para `send_whatsapp_media` e `send_whatsapp_formatted_media`.
 
 Campos principais:
 
 - `recipient`
-- `filePath`
+- `filePath`, para arquivo local
+- `mediaUrl`, para URL HTTPS publica
 - `mediaType`: `image`, `video`, `audio` ou `document`
 - `caption`, opcional
 - `asVoice`, opcional para audio
+
+## Formatacao de texto
+
+Use `format_whatsapp_message` para gerar uma previa sem enviar:
+
+```json
+{
+  "title": "Oferta GHCO",
+  "body": "Plano disponivel para contratacao hoje.",
+  "quotes": ["R$ 197,00", "Instalacao inclusa"],
+  "footer": "Responder SAIR para nao receber novas mensagens."
+}
+```
+
+Resultado:
+
+```txt
+*Oferta GHCO*
+
+_Plano disponivel para contratacao hoje._
+
+> R$ 197,00
+> Instalacao inclusa
+
+Responder SAIR para nao receber novas mensagens.
+```
+
+Use `send_whatsapp_formatted_message` para texto e `send_whatsapp_formatted_media` para legenda formatada em foto, video ou documento.
 
 ## Download de midia
 

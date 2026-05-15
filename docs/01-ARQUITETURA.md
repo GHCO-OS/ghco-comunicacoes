@@ -33,6 +33,7 @@ WhatsApp
 - `GET /api/messages/search?q=texto&limit=20`
 - `GET /api/media?limit=50`
 - `POST /api/messages/send`
+- `POST /api/messages/format`
 - `POST /api/messages/send-media`
 - `POST /api/media/download`
 
@@ -47,7 +48,10 @@ WhatsApp
 - `get_message`
 - `list_media_messages`
 - `send_whatsapp_message`
+- `format_whatsapp_message`
+- `send_whatsapp_formatted_message`
 - `send_whatsapp_media`
+- `send_whatsapp_formatted_media`
 - `download_whatsapp_media`
 
 ## Auditoria de contatos
@@ -80,7 +84,7 @@ Nomes conhecidos podem ser enviados em `nameOverrides` para trocar `Contato 0786
 
 O bridge registra metadados de imagem, video, audio e documento quando recebe mensagens. O arquivo em si so e baixado quando uma ferramenta chama `download_whatsapp_media`, salvando o conteudo em `store/media/`.
 
-Envio de midia usa caminhos locais da maquina. Tipos suportados:
+Envio de midia aceita caminhos locais da maquina via `filePath` ou URL HTTPS publica via `mediaUrl`. Tipos suportados:
 
 - `image`
 - `video`
@@ -88,6 +92,15 @@ Envio de midia usa caminhos locais da maquina. Tipos suportados:
 - `document`
 
 Para audio com aparencia de mensagem de voz, use `asVoice=true`. Arquivos `.ogg`/Opus continuam sendo a opcao mais compativel.
+
+## Formatacao de mensagens
+
+O endpoint `/api/messages/format` e as tools `format_whatsapp_message`, `send_whatsapp_formatted_message` e `send_whatsapp_formatted_media` aplicam uma convencao unica:
+
+- `title` vira `*titulo*`, exibido em negrito no WhatsApp
+- `body` vira `_corpo_`, exibido em italico
+- cada item em `quotes` vira uma linha `> informacao`, usada para precos e informacoes uteis
+- `footer` e enviado sem formatacao extra
 
 ## ChatGPT Apps e MCP remoto
 

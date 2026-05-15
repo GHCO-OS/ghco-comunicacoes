@@ -101,8 +101,34 @@ Exemplo de configuracao MCP:
 - `get_message`
 - `list_media_messages`
 - `send_whatsapp_message`
+- `format_whatsapp_message`
+- `send_whatsapp_formatted_message`
 - `send_whatsapp_media`
+- `send_whatsapp_formatted_media`
 - `download_whatsapp_media`
+
+## Formatacao WhatsApp
+
+O formatador padrao gera texto compatvel com WhatsApp:
+
+```txt
+*Titulo em negrito*
+
+_Corpo em italico_
+
+> Preco ou informacao util em citacao
+```
+
+Use `format_whatsapp_message` para revisar o texto antes de enviar, `send_whatsapp_formatted_message` para enviar texto formatado e `send_whatsapp_formatted_media` para usar a mesma regra na legenda de fotos, videos e documentos.
+
+## Envio de midia
+
+`send_whatsapp_media` e `send_whatsapp_formatted_media` aceitam:
+
+- `filePath`: arquivo local nesta maquina
+- `mediaUrl`: URL HTTPS publica
+- `mediaType`: `image`, `video`, `audio` ou `document`
+- `asVoice`: `true` para audio com aparencia de mensagem de voz
 
 ## Auditoria de agenda
 
@@ -144,7 +170,7 @@ Leonardo 0786
 
 ## Estado
 
-MVP tecnico com texto e midia local. Ainda nao inclui multi-conta, interface web, allowlist granular nem endpoint HTTPS publico para ChatGPT Apps.
+MVP tecnico com texto, texto formatado, envio de midia por arquivo local ou URL HTTPS, leitura local de conversas e auditoria de contatos. Ainda nao inclui multi-conta, interface web, allowlist granular nem endpoint HTTPS publico proprio para ChatGPT Apps.
 
 ## ChatGPT
 

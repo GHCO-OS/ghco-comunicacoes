@@ -4,6 +4,7 @@ import express from "express";
 import { z } from "zod";
 import { requireBearerToken } from "./auth.js";
 import { getConfig } from "./config.js";
+import { formatWhatsAppText } from "./formatting.js";
 import { MessageStore } from "./store.js";
 import { WhatsAppClient } from "./whatsappClient.js";
 
@@ -113,17 +114,44 @@ app.post("/api/messages/send", async (request, response, next) => {
   }
 });
 
+app.post("/api/messages/format", (request, response, next) => {
+  try {
+    const input = z
+      .object({
+        title: z.string().max(200).optional(),
+        body: z.string().max(3000).optional(),
+        quotes: z.array(z.string().min(1).max(500)).max(20).default([]),
+        footer: z.string().max(1000).optional()
+      })
+      .parse(request.body);
+
+    const text = formatWhatsAppText(input);
+    if (!text) {
+      response.status(400).json({ ok: false, error: "Formatted message is empty." });
+      return;
+    }
+
+    response.json({ ok: true, text });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post("/api/messages/send-media", async (request, response, next) => {
   try {
     const input = z
       .object({
         recipient: z.string().min(6),
-        filePath: z.string().min(1),
+        filePath: z.string().min(1).optional(),
+        mediaUrl: z.string().url().optional(),
         mediaType: z.enum(["image", "video", "audio", "document"]),
         caption: z.string().max(4000).optional(),
         fileName: z.string().min(1).optional(),
         mimeType: z.string().min(3).optional(),
         asVoice: z.boolean().optional()
+      })
+      .refine((value) => Boolean(value.filePath) !== Boolean(value.mediaUrl), {
+        message: "Provide exactly one media source: filePath or mediaUrl."
       })
       .parse(request.body);
 
