@@ -32,6 +32,21 @@ app.get("/api/chats/:jid/messages", (request, response) => {
   response.json({ ok: true, messages: store.listMessages(request.params.jid, limit) });
 });
 
+app.get("/api/chats/:jid/messages/:messageId", (request, response) => {
+  const message = store.getMessage(request.params.jid, request.params.messageId);
+  if (!message) {
+    response.status(404).json({ ok: false, error: "Message not found." });
+    return;
+  }
+
+  response.json({ ok: true, message });
+});
+
+app.get("/api/media", (request, response) => {
+  const limit = boundedNumber(request.query.limit, 50, 1, 200);
+  response.json({ ok: true, messages: store.listMediaMessages(limit) });
+});
+
 app.get("/api/messages/search", (request, response) => {
   const query = z.string().min(1).parse(request.query.q);
   const limit = boundedNumber(request.query.limit, 20, 1, 100);
@@ -48,6 +63,43 @@ app.post("/api/messages/send", async (request, response, next) => {
       .parse(request.body);
 
     const result = await whatsapp.sendText(input.recipient, input.text);
+    response.json({ ok: true, result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/messages/send-media", async (request, response, next) => {
+  try {
+    const input = z
+      .object({
+        recipient: z.string().min(6),
+        filePath: z.string().min(1),
+        mediaType: z.enum(["image", "video", "audio", "document"]),
+        caption: z.string().max(4000).optional(),
+        fileName: z.string().min(1).optional(),
+        mimeType: z.string().min(3).optional(),
+        asVoice: z.boolean().optional()
+      })
+      .parse(request.body);
+
+    const result = await whatsapp.sendMedia(input);
+    response.json({ ok: true, result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/media/download", async (request, response, next) => {
+  try {
+    const input = z
+      .object({
+        chatJid: z.string().min(1),
+        messageId: z.string().min(1)
+      })
+      .parse(request.body);
+
+    const result = await whatsapp.downloadMedia(input.chatJid, input.messageId);
     response.json({ ok: true, result });
   } catch (error) {
     next(error);
@@ -71,4 +123,3 @@ function boundedNumber(value: unknown, fallback: number, min: number, max: numbe
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(max, Math.max(min, Math.trunc(parsed)));
 }
-

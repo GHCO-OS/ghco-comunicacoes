@@ -62,6 +62,31 @@ server.registerTool(
 );
 
 server.registerTool(
+  "get_message",
+  {
+    title: "Get one WhatsApp message",
+    description: "Read one locally stored WhatsApp message by chat JID and message ID.",
+    inputSchema: {
+      jid: z.string().min(1),
+      messageId: z.string().min(1)
+    }
+  },
+  async ({ jid, messageId }) => textResult(await client.getMessage(jid, messageId))
+);
+
+server.registerTool(
+  "list_media_messages",
+  {
+    title: "List WhatsApp media messages",
+    description: "List recent messages that contain downloadable media metadata.",
+    inputSchema: {
+      limit: z.number().int().min(1).max(200).default(50)
+    }
+  },
+  async ({ limit }) => textResult(await client.listMediaMessages(limit))
+);
+
+server.registerTool(
   "send_whatsapp_message",
   {
     title: "Send WhatsApp message",
@@ -72,6 +97,37 @@ server.registerTool(
     }
   },
   async ({ recipient, text }) => textResult(await client.sendMessage(recipient, text))
+);
+
+server.registerTool(
+  "send_whatsapp_media",
+  {
+    title: "Send WhatsApp media",
+    description: "Send an image, video, audio file, voice note, or document through the local WhatsApp bridge.",
+    inputSchema: {
+      recipient: z.string().min(6),
+      filePath: z.string().min(1),
+      mediaType: z.enum(["image", "video", "audio", "document"]),
+      caption: z.string().max(4000).optional(),
+      fileName: z.string().min(1).optional(),
+      mimeType: z.string().min(3).optional(),
+      asVoice: z.boolean().optional()
+    }
+  },
+  async (input) => textResult(await client.sendMedia(input))
+);
+
+server.registerTool(
+  "download_whatsapp_media",
+  {
+    title: "Download WhatsApp media",
+    description: "Download media from a locally stored WhatsApp message and return the local file path.",
+    inputSchema: {
+      chatJid: z.string().min(1),
+      messageId: z.string().min(1)
+    }
+  },
+  async ({ chatJid, messageId }) => textResult(await client.downloadMedia(chatJid, messageId))
 );
 
 await server.connect(new StdioServerTransport());
@@ -86,4 +142,3 @@ function textResult(value: unknown) {
     ]
   };
 }
-

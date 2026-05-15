@@ -53,6 +53,18 @@ npm run dev:bridge
 
 Na primeira execucao, leia o QR Code no terminal com o WhatsApp.
 
+No Windows, para deixar o bridge rodando nesta maquina:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/start-local.ps1 -Visible
+```
+
+Use `-Visible` na primeira conexao para conseguir ler o QR Code. Depois que a sessao estiver pareada, o bridge pode rodar oculto:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/start-local.ps1
+```
+
 ## Rodar o servidor MCP
 
 ```bash
@@ -84,9 +96,16 @@ Exemplo de configuracao MCP:
 - `list_chats`
 - `search_messages`
 - `get_chat_messages`
+- `get_message`
+- `list_media_messages`
 - `send_whatsapp_message`
+- `send_whatsapp_media`
+- `download_whatsapp_media`
 
 ## Estado
 
-MVP tecnico. Ainda nao inclui anexos, audio, multi-conta, interface web nem deploy remoto.
+MVP tecnico com texto e midia local. Ainda nao inclui multi-conta, interface web, allowlist granular nem endpoint HTTPS publico para ChatGPT Apps.
 
+## ChatGPT
+
+O servidor MCP atual roda por `stdio`, ideal para clientes locais que aceitam MCP. Para conectar diretamente ao ChatGPT como app/conector, o proximo passo e publicar um MCP remoto HTTPS com autenticacao e politicas de permissao. Nao exponha o bridge Baileys local diretamente na internet.

@@ -6,15 +6,15 @@
 - SQLite para chats e mensagens.
 - API REST local.
 - Servidor MCP stdio.
-- Tools basicas de leitura, busca e envio.
+- Tools de leitura, busca, envio de texto, envio de midia e download de midia.
+- Scripts Windows para subir/parar/status local.
 
 ## Proximos passos
 
-- Suporte a anexos e download de midia.
 - Guardrails por allowlist de contatos.
 - Modo somente leitura.
 - Multi-conta.
 - Dashboard local.
 - Exportacao auditavel.
 - Pacote de instalacao Windows.
-
+- MCP remoto HTTPS ou ChatGPT App com Apps SDK.

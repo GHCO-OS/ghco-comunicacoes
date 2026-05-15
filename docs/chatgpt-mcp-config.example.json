@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "ghco-comunicacoes": {
+      "command": "node",
+      "args": [
+        "C:/Users/usuario/Documents/Codex/GHCO-Comunicacoes/apps/mcp-server/dist/index.js"
+      ],
+      "env": {
+        "GHCO_BRIDGE_URL": "http://127.0.0.1:8788",
+        "GHCO_BRIDGE_TOKEN": "troque-este-token"
+      }
+    }
+  }
+}
+

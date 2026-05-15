@@ -13,7 +13,13 @@ const MessageSchema = z.object({
   text: z.string().nullable(),
   timestamp: z.string(),
   isFromMe: z.boolean(),
-  messageType: z.string()
+  messageType: z.string(),
+  mediaType: z.string().nullable(),
+  mediaMimeType: z.string().nullable(),
+  mediaFileName: z.string().nullable(),
+  mediaLocalPath: z.string().nullable(),
+  mediaSizeBytes: z.number().nullable(),
+  rawJson: z.string().optional()
 });
 
 export class BridgeClient {
@@ -50,6 +56,22 @@ export class BridgeClient {
     return result.messages;
   }
 
+  async getMessage(jid: string, messageId: string) {
+    const result = await this.request(
+      `/api/chats/${encodeURIComponent(jid)}/messages/${encodeURIComponent(messageId)}`,
+      z.object({ ok: z.literal(true), message: MessageSchema })
+    );
+    return result.message;
+  }
+
+  async listMediaMessages(limit: number) {
+    const result = await this.request(
+      `/api/media?limit=${encodeURIComponent(String(limit))}`,
+      z.object({ ok: z.literal(true), messages: z.array(MessageSchema) })
+    );
+    return result.messages;
+  }
+
   async sendMessage(recipient: string, text: string) {
     return this.request(
       "/api/messages/send",
@@ -64,6 +86,57 @@ export class BridgeClient {
       {
         method: "POST",
         body: JSON.stringify({ recipient, text })
+      }
+    );
+  }
+
+  async sendMedia(input: {
+    recipient: string;
+    filePath: string;
+    mediaType: "image" | "video" | "audio" | "document";
+    caption?: string;
+    fileName?: string;
+    mimeType?: string;
+    asVoice?: boolean;
+  }) {
+    return this.request(
+      "/api/messages/send-media",
+      z.object({
+        ok: z.literal(true),
+        result: z.object({
+          jid: z.string(),
+          messageId: z.string().nullable(),
+          mediaType: z.string(),
+          fileName: z.string(),
+          mimeType: z.string()
+        })
+      }),
+      true,
+      {
+        method: "POST",
+        body: JSON.stringify(input)
+      }
+    );
+  }
+
+  async downloadMedia(chatJid: string, messageId: string) {
+    return this.request(
+      "/api/media/download",
+      z.object({
+        ok: z.literal(true),
+        result: z.object({
+          chatJid: z.string(),
+          messageId: z.string(),
+          mediaType: z.string(),
+          fileName: z.string().nullable(),
+          localPath: z.string(),
+          sizeBytes: z.number()
+        })
+      }),
+      true,
+      {
+        method: "POST",
+        body: JSON.stringify({ chatJid, messageId })
       }
     );
   }
@@ -96,4 +169,3 @@ export class BridgeClient {
     return schema.parse(data);
   }
 }
-

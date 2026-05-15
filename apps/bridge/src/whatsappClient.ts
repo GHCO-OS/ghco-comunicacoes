@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import makeWASocket, {
   DisconnectReason,
+  downloadMediaMessage,
   fetchLatestBaileysVersion,
   useMultiFileAuthState
 } from "@whiskeysockets/baileys";
@@ -83,6 +84,92 @@ export class WhatsAppClient {
     };
   }
 
+  async sendMedia(input: {
+    recipient: string;
+    filePath: string;
+    mediaType: "image" | "video" | "audio" | "document";
+    caption?: string;
+    fileName?: string;
+    mimeType?: string;
+    asVoice?: boolean;
+  }) {
+    if (!this.socket) {
+      throw new Error("WhatsApp socket is not initialized.");
+    }
+
+    const absolutePath = path.resolve(input.filePath);
+    if (!fs.existsSync(absolutePath)) {
+      throw new Error(`Media file does not exist: ${absolutePath}`);
+    }
+
+    const jid = normalizeRecipient(input.recipient);
+    const mimeType = input.mimeType ?? inferMimeType(absolutePath);
+    const fileName = input.fileName ?? path.basename(absolutePath);
+    const media = { url: absolutePath };
+    const content =
+      input.mediaType === "image"
+        ? { image: media, caption: input.caption, mimetype: mimeType }
+        : input.mediaType === "video"
+          ? { video: media, caption: input.caption, mimetype: mimeType }
+          : input.mediaType === "audio"
+            ? { audio: media, mimetype: mimeType, ptt: Boolean(input.asVoice) }
+            : { document: media, caption: input.caption, mimetype: mimeType, fileName };
+
+    const result = await this.socket.sendMessage(jid, content);
+    return {
+      jid,
+      messageId: result?.key?.id ?? null,
+      mediaType: input.mediaType,
+      fileName,
+      mimeType
+    };
+  }
+
+  async downloadMedia(chatJid: string, messageId: string) {
+    if (!this.socket) {
+      throw new Error("WhatsApp socket is not initialized.");
+    }
+
+    const stored = this.messageStore.getMessage(chatJid, messageId);
+    if (!stored) {
+      throw new Error("Message not found in local store.");
+    }
+
+    if (!stored.mediaType) {
+      throw new Error("Message has no downloadable media metadata.");
+    }
+
+    if (stored.mediaLocalPath && fs.existsSync(stored.mediaLocalPath)) {
+      return {
+        chatJid,
+        messageId,
+        mediaType: stored.mediaType,
+        fileName: stored.mediaFileName,
+        localPath: stored.mediaLocalPath,
+        sizeBytes: fs.statSync(stored.mediaLocalPath).size
+      };
+    }
+
+    const rawMessage = JSON.parse(stored.rawJson);
+    const buffer = await downloadMediaMessage(rawMessage, "buffer", {});
+    const mediaDir = path.join(this.storeDir, "media", sanitizePathSegment(chatJid));
+    fs.mkdirSync(mediaDir, { recursive: true });
+
+    const fileName = stored.mediaFileName ?? `${messageId}.${extensionForMediaType(stored.mediaType)}`;
+    const localPath = path.join(mediaDir, sanitizeFileName(fileName));
+    fs.writeFileSync(localPath, buffer);
+    this.messageStore.markMediaDownloaded(chatJid, messageId, localPath, buffer.byteLength);
+
+    return {
+      chatJid,
+      messageId,
+      mediaType: stored.mediaType,
+      fileName,
+      localPath,
+      sizeBytes: buffer.byteLength
+    };
+  }
+
   private persistIncomingMessage(message: any): void {
     const chatJid = message.key?.remoteJid;
     const id = message.key?.id;
@@ -115,6 +202,7 @@ export class WhatsAppClient {
       timestamp,
       isFromMe: Boolean(message.key?.fromMe),
       messageType,
+      ...extractMediaMetadata(message.message, id),
       rawJson: JSON.stringify(message)
     });
   }
@@ -129,6 +217,43 @@ function extractText(message: any): string | null {
     message.videoMessage?.caption ??
     null
   );
+}
+
+function extractMediaMetadata(message: any, messageId: string) {
+  const media =
+    message?.imageMessage ??
+    message?.videoMessage ??
+    message?.audioMessage ??
+    message?.documentMessage ??
+    null;
+
+  const mediaType = message?.imageMessage
+    ? "image"
+    : message?.videoMessage
+      ? "video"
+      : message?.audioMessage
+        ? "audio"
+        : message?.documentMessage
+          ? "document"
+          : null;
+
+  if (!mediaType || !media) {
+    return {
+      mediaType: null,
+      mediaMimeType: null,
+      mediaFileName: null,
+      mediaLocalPath: null,
+      mediaSizeBytes: null
+    };
+  }
+
+  return {
+    mediaType,
+    mediaMimeType: media.mimetype ?? null,
+    mediaFileName: media.fileName ?? `${messageId}.${extensionForMediaType(mediaType)}`,
+    mediaLocalPath: null,
+    mediaSizeBytes: typeof media.fileLength === "number" ? media.fileLength : null
+  };
 }
 
 function normalizeRecipient(recipient: string): string {
@@ -148,3 +273,45 @@ function toIsoTimestamp(value: unknown): string {
   return new Date().toISOString();
 }
 
+function inferMimeType(filePath: string): string {
+  const extension = path.extname(filePath).toLowerCase();
+  const map: Record<string, string> = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".gif": "image/gif",
+    ".mp4": "video/mp4",
+    ".mov": "video/quicktime",
+    ".mp3": "audio/mpeg",
+    ".ogg": "audio/ogg; codecs=opus",
+    ".opus": "audio/ogg; codecs=opus",
+    ".wav": "audio/wav",
+    ".pdf": "application/pdf",
+    ".txt": "text/plain",
+    ".csv": "text/csv",
+    ".doc": "application/msword",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xls": "application/vnd.ms-excel",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  };
+  return map[extension] ?? "application/octet-stream";
+}
+
+function extensionForMediaType(mediaType: string): string {
+  const map: Record<string, string> = {
+    image: "jpg",
+    video: "mp4",
+    audio: "ogg",
+    document: "bin"
+  };
+  return map[mediaType] ?? "bin";
+}
+
+function sanitizePathSegment(value: string): string {
+  return value.replace(/[^a-zA-Z0-9@._-]/g, "_");
+}
+
+function sanitizeFileName(value: string): string {
+  return path.basename(value).replace(/[^a-zA-Z0-9._ -]/g, "_");
+}

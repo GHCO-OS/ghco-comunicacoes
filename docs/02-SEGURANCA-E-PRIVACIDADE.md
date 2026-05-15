@@ -15,6 +15,8 @@ Um servidor MCP de WhatsApp pode expor mensagens privadas a agentes. O risco pri
 - Banco, sessoes e midias fora do Git.
 - Tools MCP separadas para leitura e envio.
 - Envio exige parametros explicitos de destinatario e texto.
+- Midias baixadas ficam em `store/media/`, fora do Git.
+- O bridge local nao deve ser exposto diretamente na internet.
 
 ## Regras operacionais
 
@@ -22,4 +24,4 @@ Um servidor MCP de WhatsApp pode expor mensagens privadas a agentes. O risco pri
 - Revise mensagens antes de permitir resumos amplos.
 - Evite conectar agentes sem politicas de permissao.
 - Rotacione `GHCO_BRIDGE_TOKEN` se o ambiente for compartilhado.
-
+- Antes de conectar ao ChatGPT por HTTPS, implemente autenticacao forte, allowlist de tools e logs de auditoria.
