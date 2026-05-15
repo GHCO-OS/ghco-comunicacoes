@@ -94,6 +94,7 @@ Exemplo de configuracao MCP:
 
 - `communications_health`
 - `list_chats`
+- `audit_contacts`
 - `search_messages`
 - `get_chat_messages`
 - `get_message`
@@ -101,6 +102,22 @@ Exemplo de configuracao MCP:
 - `send_whatsapp_message`
 - `send_whatsapp_media`
 - `download_whatsapp_media`
+
+## Auditoria de agenda
+
+Use `audit_contacts` para catalogar chats individuais vistos pelo bridge. A ferramenta sugere nomes no padrao:
+
+```txt
+Nome 0786
+```
+
+Exemplo:
+
+```txt
+Leonardo 0786
+```
+
+Observacao: a classificacao `likely_saved`/`likely_unsaved` e inferida a partir dos metadados do WhatsApp Web e do historico local. Ela nao le diretamente a agenda do celular.
 
 ## Estado
 

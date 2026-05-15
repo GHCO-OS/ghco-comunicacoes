@@ -27,6 +27,22 @@ app.get("/api/chats", (request, response) => {
   response.json({ ok: true, chats: store.listChats(limit) });
 });
 
+app.get("/api/audit/contacts", (request, response) => {
+  const limit = boundedNumber(request.query.limit, 500, 1, 5000);
+  const includeGroups = request.query.includeGroups === "true";
+  const includeNonPhoneIds = request.query.includeNonPhoneIds === "true";
+  const format = request.query.format === "csv" ? "csv" : "json";
+  const result = store.auditContacts(limit, { includeGroups, includeNonPhoneIds });
+
+  if (format === "csv") {
+    response.type("text/csv");
+    response.send(toContactAuditCsv(result.contacts));
+    return;
+  }
+
+  response.json({ ok: true, ...result });
+});
+
 app.get("/api/chats/:jid/messages", (request, response) => {
   const limit = boundedNumber(request.query.limit, 50, 1, 200);
   response.json({ ok: true, messages: store.listMessages(request.params.jid, limit) });
@@ -122,4 +138,28 @@ function boundedNumber(value: unknown, fallback: number, min: number, max: numbe
   const parsed = Number(first ?? fallback);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(max, Math.max(min, Math.trunc(parsed)));
+}
+
+function toContactAuditCsv(rows: ReturnType<typeof store.auditContacts>["contacts"]): string {
+  const header = [
+    "jid",
+    "chatKind",
+    "phone",
+    "last4",
+    "displayName",
+    "inferredName",
+    "suggestedContactName",
+    "savedStatus",
+    "reason",
+    "isGroup",
+    "isPhoneBacked",
+    "lastMessageAt"
+  ];
+  return [header, ...rows.map((row) => header.map((key) => String(row[key as keyof typeof row] ?? "")))]
+    .map((columns) => columns.map(csvCell).join(","))
+    .join("\n");
+}
+
+function csvCell(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
 }

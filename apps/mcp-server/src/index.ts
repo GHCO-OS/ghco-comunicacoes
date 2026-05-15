@@ -36,6 +36,21 @@ server.registerTool(
 );
 
 server.registerTool(
+  "audit_contacts",
+  {
+    title: "Audit WhatsApp contact catalog",
+    description:
+      "Audit locally seen WhatsApp chats and suggest contact names in the format Nome 0786. This infers saved/unsaved status from chat metadata; it does not read the phone address book directly.",
+    inputSchema: {
+      limit: z.number().int().min(1).max(5000).default(500),
+      includeGroups: z.boolean().default(false),
+      includeNonPhoneIds: z.boolean().default(false)
+    }
+  },
+  async ({ limit, includeGroups, includeNonPhoneIds }) => textResult(await client.auditContacts(limit, includeGroups, includeNonPhoneIds))
+);
+
+server.registerTool(
   "search_messages",
   {
     title: "Search WhatsApp messages",

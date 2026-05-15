@@ -25,6 +25,7 @@ WhatsApp
 ## Endpoints do bridge
 
 - `GET /health`
+- `GET /api/audit/contacts?limit=500&includeGroups=false&includeNonPhoneIds=false&format=json`
 - `GET /api/chats?limit=50`
 - `GET /api/chats/:jid/messages?limit=50`
 - `GET /api/chats/:jid/messages/:messageId`
@@ -38,6 +39,7 @@ WhatsApp
 
 - `communications_health`
 - `list_chats`
+- `audit_contacts`
 - `search_messages`
 - `get_chat_messages`
 - `get_message`
@@ -45,6 +47,22 @@ WhatsApp
 - `send_whatsapp_message`
 - `send_whatsapp_media`
 - `download_whatsapp_media`
+
+## Auditoria de contatos
+
+O endpoint `/api/audit/contacts` e a tool `audit_contacts` leem chats conhecidos localmente e produzem uma lista de catalogacao. Por padrao, entram apenas chats individuais com telefone real em `@s.whatsapp.net`; grupos, newsletters e IDs `@lid` ficam fora salvo quando solicitados.
+
+Campos principais:
+
+- `phone`
+- `displayName`
+- `chatKind`
+- `savedStatus`: `likely_saved`, `likely_unsaved`, `unknown` ou `group`
+- `suggestedContactName`
+
+O nome sugerido segue o padrao `Nome 0786`, usando o nome humano disponivel no chat e os quatro ultimos digitos do telefone. Quando nao ha nome humano, a sugestao vira `Contato 0786`.
+
+Limitacao: o WhatsApp Web nao garante leitura direta da agenda do celular; por isso o status e uma inferencia operacional.
 
 ## Midia
 

@@ -7,6 +7,7 @@
 - API REST local.
 - Servidor MCP stdio.
 - Tools de leitura, busca, envio de texto, envio de midia e download de midia.
+- Auditoria de catalogacao de contatos com sugestao `Nome 0786`.
 - Scripts Windows para subir/parar/status local.
 
 ## Proximos passos

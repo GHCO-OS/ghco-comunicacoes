@@ -22,6 +22,35 @@ const MessageSchema = z.object({
   rawJson: z.string().optional()
 });
 
+const ContactAuditItemSchema = z.object({
+  jid: z.string(),
+  chatKind: z.enum(["direct", "group", "newsletter", "lid", "unknown"]),
+  phone: z.string().nullable(),
+  last4: z.string().nullable(),
+  displayName: z.string().nullable(),
+  inferredName: z.string().nullable(),
+  suggestedContactName: z.string().nullable(),
+  savedStatus: z.enum(["likely_saved", "likely_unsaved", "unknown", "group", "non_phone_id"]),
+  reason: z.string(),
+  isGroup: z.boolean(),
+  isPhoneBacked: z.boolean(),
+  lastMessageAt: z.string().nullable()
+});
+
+const ContactAuditSchema = z.object({
+  ok: z.literal(true),
+  summary: z.object({
+    total: z.number(),
+    individualChats: z.number(),
+    groups: z.number(),
+    nonPhoneIds: z.number(),
+    likelySaved: z.number(),
+    likelyUnsaved: z.number(),
+    unknown: z.number()
+  }),
+  contacts: z.array(ContactAuditItemSchema)
+});
+
 export class BridgeClient {
   constructor(
     private readonly baseUrl: string,
@@ -38,6 +67,13 @@ export class BridgeClient {
       z.object({ ok: z.literal(true), chats: z.array(ChatSchema) })
     );
     return result.chats;
+  }
+
+  async auditContacts(limit: number, includeGroups: boolean, includeNonPhoneIds: boolean) {
+    return this.request(
+      `/api/audit/contacts?limit=${encodeURIComponent(String(limit))}&includeGroups=${encodeURIComponent(String(includeGroups))}&includeNonPhoneIds=${encodeURIComponent(String(includeNonPhoneIds))}`,
+      ContactAuditSchema
+    );
   }
 
   async searchMessages(query: string, limit: number) {

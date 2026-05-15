@@ -73,3 +73,24 @@ Campos principais:
 2. Pegue `chatJid` e `id`.
 3. Chame `download_whatsapp_media`.
 4. O retorno inclui `localPath`.
+
+## Auditoria de contatos
+
+Via MCP:
+
+```txt
+audit_contacts
+```
+
+Via API local:
+
+```powershell
+$token = (Get-Content .env | Where-Object { $_ -match '^GHCO_BRIDGE_TOKEN=' }) -replace '^GHCO_BRIDGE_TOKEN=',''
+Invoke-RestMethod "http://127.0.0.1:8788/api/audit/contacts?limit=500" -Headers @{Authorization="Bearer $token"}
+```
+
+CSV:
+
+```powershell
+Invoke-WebRequest "http://127.0.0.1:8788/api/audit/contacts?limit=500&format=csv" -Headers @{Authorization="Bearer $token"} -OutFile store/contact-audit.csv
+```
